@@ -2980,6 +2980,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 
 - (void)textDidChange
 {
+    self.textField.text = [self.textField.text stringByReplacingOccurrencesOfString:@" " withString:@"\u00a0"];
     [self updateFieldValue];
 }
 
