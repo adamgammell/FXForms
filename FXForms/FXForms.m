@@ -3034,9 +3034,22 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 @end
 
 
-@implementation FXFormTextViewCell
+@implementation FXFormTextViewCell {
+    CGFloat _lastHeight;
+}
 
 + (CGFloat)heightForField:(FXFormField *)field width:(CGFloat)width
+{
+    UITextView *textView = [self textViewForSizing];
+    textView.text = [field fieldDescription] ?: @" ";
+    CGSize textViewSize = [textView sizeThatFits:CGSizeMake(width - FXFormFieldPaddingLeft - FXFormFieldPaddingRight, FLT_MAX)];
+    
+    CGFloat height = [field.title length]? 21: 0; // label height
+    height += FXFormFieldPaddingTop + ceilf(textViewSize.height) + FXFormFieldPaddingBottom;
+    return height;
+}
+
++ (UITextView *)textViewForSizing
 {
     static UITextView *textView;
     static dispatch_once_t onceToken;
@@ -3044,13 +3057,8 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         textView = [[UITextView alloc] init];
         textView.font = [UIFont systemFontOfSize:17];
     });
-    
-    textView.text = [field fieldDescription] ?: @" ";
-    CGSize textViewSize = [textView sizeThatFits:CGSizeMake(width - FXFormFieldPaddingLeft - FXFormFieldPaddingRight, FLT_MAX)];
-    
-    CGFloat height = [field.title length]? 21: 0; // label height
-    height += FXFormFieldPaddingTop + ceilf(textViewSize.height) + FXFormFieldPaddingBottom;
-    return height;
+
+    return textView;
 }
 
 - (void)setUp
@@ -3178,8 +3186,14 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     
     //resize the tableview if required
     UITableView *tableView = [self tableView];
-    [tableView beginUpdates];
-    [tableView endUpdates];
+     CGFloat height = [[self class] heightForField:self.field width:self.tableView.frame.size.width];
+
+    if (fabs(_lastHeight - height) >= 1.f) {
+        _lastHeight = height;
+        
+        [tableView beginUpdates];
+        [tableView endUpdates];
+    }
     
     //scroll to show cursor
     CGRect cursorRect = [self.textView caretRectForPosition:self.textView.selectedTextRange.end];
